@@ -6,6 +6,8 @@
         fetch(url, {
           method: 'POST',
           body: message
+        }).then((res)=>{
+          console.log('here we got res', res)
         });
       }
     
@@ -30,7 +32,7 @@
     
       async function subscribe() {
         let response = await fetch(url);
-    
+        console.log('HERE WE RUN', response.status)
         if (response.status == 502) {
           // Connection timeout
           // happens when the connection was pending for too long
@@ -45,6 +47,7 @@
         } else {
           // Got message
           let message = await response.text();
+          console.log('meesssagte', message)
           showMessage(message);
           await subscribe();
         }

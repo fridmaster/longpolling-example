@@ -1,5 +1,5 @@
 import { Express, Router } from 'express';
-import { request } from 'http';
+import * as path from 'path';
 
 export default class AppRouter {
     public router;
@@ -8,6 +8,7 @@ export default class AppRouter {
     constructor(app: Express) {
         this.router = Router();
         this.app = app;
+
     }
 
     public init(): void {
@@ -16,14 +17,15 @@ export default class AppRouter {
             res.send('WE SEND IT BACk')
         });
         this.router.post('/publish', (req, res)=>{
+             let after = req.query.after;
+            after = 3000;
             // принять POST-запрос
             req.setEncoding('utf8');
             var message = '';
             req.on('data', function(chunk) {
             message += chunk;
-            }).on('end', function() {
-            this.publish(message); // собственно, отправка
-            res.end("ok");
+            }).on('end', () => {
+              this.publish(message, after, res); // собственно, отправка
             });
 
             return;
@@ -32,18 +34,23 @@ export default class AppRouter {
             this.onSubscribe(req, res);
             return;
         })
+
+        this.router.get('/chat', (_req, res)=> {
+
+          console.log(path.join(__dirname + '/index.html'));
+          res.sendFile(path.resolve(__dirname + '/index.html'));
+          // next();
+        })
         this.app.use('/', this.router);
     }
 
     private onSubscribe(req, res) {
         const id = Math.random();
-        let after = req.query.after;
         res.setHeader('Content-Type', 'text/plain;charset=utf-8');
         res.setHeader("Cache-Control", "no-cache, must-revalidate");
         
         this.subscribers[id] = res;
         //console.log("новый клиент " + id + ", клиентов:" + Object.keys(subscribers).length);
-        this.publish(`send after ${after}`, after);
         req.on('close', () => {
           delete this.subscribers[id];
           //console.log("клиент "+id+" отсоединился, клиентов:" + Object.keys(subscribers).length);
@@ -51,15 +58,17 @@ export default class AppRouter {
       
       }
 
-      private publish(message, timeout) {
+      private publish(message, timeout, resOnPub) {
 
         //console.log("есть сообщение, клиентов:" + Object.keys(subscribers).length);
-      
+        resOnPub.send(JSON.stringify({message:`timeout will be ${timeout}`}));
         for (var id in this.subscribers) {
           //console.log("отсылаю сообщение " + id);
           const res = this.subscribers[id];
-
-          setTimeout(()=>{res.end(message)},timeout);
+          setTimeout(()=>{
+            res.end(message);
+            res
+          },timeout);
         }
       
         this.subscribers = {};
