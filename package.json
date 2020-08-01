@@ -1,0 +1,39 @@
+{
+  "name": "longpolling",
+  "version": "1.0.0",
+  "description": "tutorial for building long polling connection",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "ts-node main"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/fridmaster/longpolling.git"
+  },
+  "keywords": [
+    "typescript",
+    "longpolling"
+  ],
+  "author": "fridmaster",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/fridmaster/longpolling/issues"
+  },
+  "homepage": "https://github.com/fridmaster/longpolling#readme",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "d": "^1.0.1",
+    "dotenv": "^8.2.0",
+    "express": "^4.17.1",
+    "http": "0.0.1-security",
+    "ts-node": "^8.10.2",
+    "tslib": "^2.0.0"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.7",
+    "@types/node": "^14.0.26",
+    "prettier": "^2.0.5",
+    "typescript": "^3.9.7"
+  }
+}
