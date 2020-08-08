@@ -1,74 +1,119 @@
 <!DOCTYPE html>
+<link rel="stylesheet" href="https://unpkg.com/wingcss" />
+
+<style>
+  #progress {
+    width: 100%;
+    background-color: #ddd;
+  }
+
+  #bar {
+    width: 0%;
+    height: 30px;
+    background-color: #4CAF50;
+  }
+</style>
 <script>
-    function PublishForm(form, url) {
-    
-      function sendMessage(message) {
-        fetch(url, {
-          method: 'POST',
-          body: message
-        }).then((res)=>{
-          console.log('here we got res', res)
-        });
-      }
-    
-      form.onsubmit = function() {
-        let message = form.message.value;
-        if (message) {
-          form.message.value = '';
-          sendMessage(message);
-        }
-        return false;
-      };
+  let stepProgress = 0;
+  let runner;
+  let pollingStatus;
+
+  function startProgressBar(timeout) {
+    runner = setInterval(()=>{setProgressBarStatus(timeout)}, 1000);
+  }
+
+  function setProgressBarStatus(timeout) {
+    showStatus('Run Asynch Process on Back-end')
+    let progressBar = document.getElementById("bar");
+    if (parseInt(progressBar.style.width) >= 100) {
+      clearInterval(runner);
+      progressBar.style.width = 0;
+      stepProgress = 0;
+      disableButton();
+    } else {
+      stepProgress++;
+      let progressWidth = ((stepProgress * 1000) / timeout) * 100;
+      progressBar.style.width = progressWidth + "%";
     }
-    
-    // Receiving messages with long polling
-    function SubscribePane(elem, url) {
-    
-      function showMessage(message) {
-        let messageElem = document.createElement('div');
-        messageElem.append(message);
-        elem.append(messageElem);
-      }
-    
-      async function subscribe() {
-        let response = await fetch(url);
-        console.log('HERE WE RUN', response.status)
-        if (response.status == 502) {
-          // Connection timeout
-          // happens when the connection was pending for too long
-          // let's reconnect
-          await subscribe();
-        } else if (response.status != 200) {
-          // Show Error
-          showMessage(response.statusText);
-          // Reconnect in one second
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          await subscribe();
-        } else {
-          // Got message
-          let message = await response.text();
-          console.log('meesssagte', message)
-          showMessage(message);
-          await subscribe();
-        }
-      }
-    
-      subscribe();
-    
-    }</script>
+  }
 
-All visitors of this page will see messages of each other.
 
-<form name="publish">
-  <input type="text" name="message" />
-  <input type="submit" value="Send" />
+  function PublishForm(form, url) {
+    function sendMessage(timeout) {
+      startProgressBar(timeout);
+      fetch(`${url}/?after=${timeout}`, {
+        method: 'GET'
+      }).then((res) => {
+        console.log('here we got res', res)
+      });
+    }
+
+    form.onsubmit = function () {
+      let timeout = form.timeout.value;
+
+      if (timeout) {
+        form.timeout.value = '';
+        disableButton();
+        sendMessage(timeout);
+      }
+      return false;
+    };
+  }
+  function showStatus(pollingStatus){
+    console.log(pollingStatus)
+    let statusMessage = document.getElementById('status');
+    statusMessage.innerHTML = pollingStatus;
+  }
+  function disableButton() {
+    let btn = document.getElementById('submitBtn');
+    btn.disabled = !btn.disabled;
+  }
+
+  function SubscribePane(elem, url) {
+    console.log('RUN IUT')
+    async function subscribe() {
+      console.log('RUN INSIDE')
+      setTimeout(()=>{showStatus('Connected')},1000);
+      let response = await fetch(url);
+      if (response.status == 502) {
+        showStatus('Connection Fault');
+        await subscribe();
+      } else if (response.status != 200) {
+        showStatus('Connection Fault');
+        await subscribe();
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        await subscribe();
+      } else {
+        // Got message
+        console.log(response.status, url)
+        showStatus('Got Response');
+        await subscribe();
+      }
+    }
+    subscribe();
+  }
+  </script>
+<div class ="container"> 
+<div class="row">
+  <h2>Send message to Back-End! Get Answer after :</h>
+</div>
+<form name="publish" class="row">
+      <input type="number" name="timeout" />
+      <input id="submitBtn" type="submit" value="Send" />
 </form>
-
 <div id="subscribe">
+  </div>
+  <h3 id="status" class="row center"></h3>
+<div class="row">
+
+  <div id="progress">
+    <div id="bar"></div>
+  </div>
+</div>
 </div>
 
 <script>
   new PublishForm(document.forms.publish, 'publish');
-  // random url parameter to avoid any caching issues
+  // // random url parameter to avoid any caching issues
   new SubscribePane(document.getElementById('subscribe'), 'subscribe?random=' + Math.random());
 </script>
